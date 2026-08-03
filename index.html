@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Myma / Drogam — Business OS</title>
+<style>
+/* ── LOGIN ── */
+#login-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #0f0d0b;
+  display: flex; align-items: center; justify-content: center;
+}
+.login-card {
+  width: 340px; padding: 40px 36px;
+  background: #1a1612; border: 1px solid #2a2520; border-radius: 16px;
+  text-align: center;
+}
+.login-logo { font-size: 32px; font-weight: 700; color: #e8c98a; letter-spacing: -1px; margin-bottom: 4px; }
+.login-sub { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #7a6f63; margin-bottom: 32px; }
+.login-input {
+  width: 100%; padding: 12px 16px;
+  background: #221e19; border: 1px solid #2a2520; border-radius: 8px;
+  color: #f0ebe3; font-size: 15px; font-family: inherit;
+  outline: none; margin-bottom: 12px; text-align: center; letter-spacing: 2px;
+  transition: border-color 0.15s;
+}
+.login-input:focus { border-color: #e8c98a; }
+.login-input::placeholder { letter-spacing: 1px; color: #5a5047; }
+.login-btn {
+  width: 100%; padding: 12px;
+  background: #e8c98a; color: #0f0d0b;
+  border: none; border-radius: 8px; font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: inherit; letter-spacing: 1px; text-transform: uppercase;
+  transition: background 0.15s;
+}
+.login-btn:hover { background: #d4b070; }
+.login-error { font-size: 12px; color: #e05252; margin-top: 10px; min-height: 16px; }
+.login-footer { font-size: 10px; color: #4a4238; margin-top: 24px; letter-spacing: 1px; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0d0b; color: #f0ebe3; min-height: 100vh; }
+
+/* ── ALERT ── */
+.alert-banner { background: linear-gradient(90deg,#3a1a08,#2e1a04); border-bottom:1px solid #a05020; padding:10px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.alert-left { display:flex; align-items:center; gap:10px; }
+.alert-text { font-size:12px; color:#f0a050; font-weight:600; }
+.alert-sub { font-size:11px; color:#a07040; margin-left:4px; }
+.alert-countdown { font-size:11px; color:#f0a050; background:#4a2010; border:1px solid #a05020; padding:4px 12px; border-radius:20px; font-weight:700; white-space:nowrap; }
+
+/* ── HEADER ── */
+.header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px 0; }
+.logo { display:flex; align-items:baseline; gap:12px; }
+.logo h1 { font-size:26px; font-weight:700; letter-spacing:-0.5px; color:#e8c98a; }
+.logo span { font-size:11px; color:#7a6f63; letter-spacing:2px; text-transform:uppercase; }
+.header-right { text-align:right; }
+.date { font-size:12px; color:#7a6f63; }
+.watchman-badge { font-size:10px; color:#5cad7a; background:#1a2e22; padding:3px 8px; border-radius:4px; margin-top:4px; display:inline-block; }
+
+/* ── TABS ── */
+.tab-nav { display:flex; gap:2px; padding:16px 24px 0; border-bottom:1px solid #2a2520; margin-bottom:20px; overflow-x:auto; }
+.tab-btn { padding:8px 16px; border-radius:8px 8px 0 0; border:none; background:transparent; color:#7a6f63; font-size:12px; font-weight:500; cursor:pointer; letter-spacing:0.5px; transition:all 0.15s; border-bottom:2px solid transparent; margin-bottom:-1px; font-family:inherit; white-space:nowrap; }
+.tab-btn:hover { color:#c4b49a; background:#1a1612; }
+.tab-btn.active { color:#e8c98a; background:#1a1612; border-bottom:2px solid #e8c98a; }
+.tab-content { display:none; padding:0 24px 40px; }
+.tab-content.active { display:block; }
+
+/* ── LAYOUT ── */
+.grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px; }
+.grid-2 { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:16px; }
+.grid-halves { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+.grid-thirds { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px; }
+.grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:12px; margin-bottom:16px; }
+
+/* ── CARDS ── */
+.card { background:#1a1612; border:1px solid #2a2520; border-radius:12px; padding:20px; }
+.card.urgent { border-color:#7a3010; background:#1a0e08; }
+.card.green-tint { border-color:#1e4030; background:#0f1e18; }
+.card h3 { font-size:11px; font-weight:600; color:#c4b49a; margin-bottom:14px; letter-spacing:2px; text-transform:uppercase; }
+.card-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#7a6f63; margin-bottom:8px; }
+.card-value { font-size:32px; font-weight:700; color:#e8c98a; line-height:1; margin-bottom:4px; }
+.card-sub { font-size:12px; color:#7a6f63; }
+
+/* ── PRIORITIES ── */
+.priority-list { list-style:none; display:flex; flex-direction:column; gap:8px; }
+.priority-item { display:flex; align-items:flex-start; gap:12px; padding:12px 14px; border-radius:8px; background:#221e19; }
+.priority-item.hot { background:#251208; border:1px solid #6a2808; }
+.priority-num { font-size:11px; font-weight:700; color:#e8c98a; background:#2e2820; border-radius:4px; padding:2px 7px; flex-shrink:0; margin-top:1px; }
+.priority-num.red { background:#5a1a08; color:#f08060; }
+.priority-title { font-size:13px; font-weight:500; color:#e0d8ce; margin-bottom:2px; }
+.priority-sub { font-size:11px; color:#7a6f63; line-height:1.4; }
+.priority-who { font-size:10px; color:#5cad7a; background:#1a2e22; padding:2px 7px; border-radius:4px; flex-shrink:0; align-self:flex-start; margin-top:2px; margin-left:auto; white-space:nowrap; }
+
+/* ── BLOCKERS ── */
+.blocker-list { list-style:none; display:flex; flex-direction:column; gap:10px; }
+.blocker { display:flex; align-items:flex-start; gap:10px; padding:12px; border-radius:8px; background:#221e19; }
+.blocker-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+.dot-red { background:#e05252; } .dot-yellow { background:#d4a843; } .dot-green { background:#5cad7a; }
+.blocker-title { font-size:13px; font-weight:500; color:#e0d8ce; margin-bottom:2px; }
+.blocker-sub { font-size:11px; color:#7a6f63; }
+.blocker-days { font-size:10px; font-weight:700; color:#e05252; background:#3a1010; padding:2px 7px; border-radius:4px; margin-left:auto; flex-shrink:0; align-self:flex-start; }
+
+/* ── WORKSTREAMS ── */
+.ws-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+.ws-card { padding:14px; background:#1a1612; border:1px solid #2a2520; border-radius:10px; }
+.ws-card.new-stream { border-color:#3a4020; background:#171a0e; }
+.ws-icon { font-size:22px; margin-bottom:8px; }
+.ws-name { font-size:12px; font-weight:600; color:#c4b49a; margin-bottom:4px; }
+.ws-who { font-size:11px; color:#7a6f63; margin-bottom:8px; }
+.ws-status { font-size:10px; padding:2px 8px; border-radius:20px; display:inline-block; }
+.ws-now { background:#3a2a0e; color:#d4a843; }
+.ws-new { background:#2a3a0e; color:#9acd5a; }
+.ws-soon { background:#1e2e24; color:#5cad7a; }
+.ws-blocked { background:#3a1010; color:#e05252; }
+
+/* ── AGENTS ── */
+.agents-list { display:flex; flex-direction:column; gap:8px; }
+.agent-row { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:8px; background:#221e19; }
+.agent-icon { font-size:20px; flex-shrink:0; }
+.agent-name { font-size:13px; font-weight:600; color:#c4b49a; }
+.agent-desc { font-size:11px; color:#7a6f63; line-height:1.4; }
+.agent-time { font-size:10px; color:#5cad7a; background:#1a2e22; padding:3px 8px; border-radius:4px; white-space:nowrap; flex-shrink:0; margin-left:auto; }
+
+/* ── TEAM TAB ── */
+.team-layout { display:grid; grid-template-columns:260px 1fr; gap:16px; min-height:600px; }
+.contact-list-panel { display:flex; flex-direction:column; gap:8px; }
+.contact-card { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:10px; background:#1a1612; border:1px solid #2a2520; cursor:pointer; transition:all 0.15s; }
+.contact-card:hover { border-color:#4a4035; background:#221e19; }
+.contact-card.selected { border-color:#e8c98a; background:#221a0e; }
+.contact-avatar { width:36px; height:36px; border-radius:50%; background:#2e2820; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.contact-name-sm { font-size:13px; font-weight:600; color:#e0d8ce; }
+.contact-role-sm { font-size:10px; color:#7a6f63; }
+.contact-badge { font-size:9px; padding:2px 6px; border-radius:10px; margin-top:3px; display:inline-block; white-space:nowrap; }
+.badge-red { background:#4a1010; color:#e05252; }
+.badge-yellow { background:#3a2a08; color:#d4a843; }
+.badge-green { background:#1a2e22; color:#5cad7a; }
+.badge-blue { background:#1a2040; color:#6090e0; }
+
+/* ── DETAIL PANEL ── */
+.detail-panel { background:#1a1612; border:1px solid #2a2520; border-radius:12px; padding:24px; }
+.detail-header { display:flex; align-items:flex-start; gap:16px; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid #2a2520; }
+.detail-avatar { width:52px; height:52px; border-radius:50%; background:#2e2820; display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
+.detail-name { font-size:20px; font-weight:700; color:#e8c98a; margin-bottom:2px; }
+.detail-role { font-size:12px; color:#7a6f63; margin-bottom:8px; }
+.detail-context { font-size:13px; color:#c4b49a; line-height:1.6; background:#221e19; border-radius:8px; padding:12px 14px; margin-bottom:16px; }
+.detail-section-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#7a6f63; margin-bottom:10px; }
+.task-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+.task-item { display:flex; align-items:flex-start; gap:10px; padding:10px 12px; background:#221e19; border-radius:8px; }
+.task-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:4px; }
+.task-text { font-size:12px; color:#c4b49a; line-height:1.4; }
+.task-done .task-text { color:#4a4238; text-decoration:line-through; }
+.next-action { background:#1e2e22; border:1px solid #2a4030; border-radius:8px; padding:12px 14px; }
+.next-action-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#5cad7a; margin-bottom:4px; }
+.next-action-text { font-size:13px; color:#8ac890; }
+
+/* ── RUBY GUIDE ── */
+.guide-intro { font-size:14px; color:#c4b49a; line-height:1.7; background:#1a1612; border:1px solid #2a2520; border-radius:12px; padding:20px; margin-bottom:20px; }
+.guide-intro strong { color:#e8c98a; }
+.guide-section { margin-bottom:24px; }
+.guide-section h3 { font-size:12px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#e8c98a; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #2a2520; }
+.how-list { display:flex; flex-direction:column; gap:10px; }
+.how-item { display:flex; gap:14px; padding:14px 16px; background:#1a1612; border:1px solid #2a2520; border-radius:10px; align-items:flex-start; }
+.how-icon { font-size:22px; flex-shrink:0; }
+.how-title { font-size:13px; font-weight:600; color:#e0d8ce; margin-bottom:4px; }
+.how-body { font-size:12px; color:#9a8e80; line-height:1.5; }
+.how-example { font-size:11px; color:#8a9e80; background:#1a2018; border-left:2px solid #5cad7a; padding:6px 10px; border-radius:0 6px 6px 0; margin-top:8px; font-style:italic; }
+.asks-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.ask-chip { padding:10px 14px; background:#1e2820; border:1px solid #2a4030; border-radius:8px; font-size:12px; color:#8ac890; }
+.ask-chip::before { content:'"'; color:#5cad7a; }
+.ask-chip::after { content:'"'; color:#5cad7a; }
+.wont-list { display:flex; flex-direction:column; gap:8px; }
+.wont-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:#1a1208; border:1px solid #3a2810; border-radius:8px; font-size:12px; color:#c09060; }
+.wont-item::before { content:'🔒'; font-size:14px; }
+
+/* ── MARKET PULSE ── */
+.pulse-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.pulse-status { font-size:11px; color:#5cad7a; background:#1a2e22; border:1px solid #2a4030; padding:4px 12px; border-radius:20px; }
+.pulse-card { background:#1a1612; border:1px solid #2a2520; border-radius:12px; padding:20px; margin-bottom:16px; }
+.pulse-section-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#7a6f63; margin-bottom:10px; }
+.pulse-delta { font-size:13px; color:#c4b49a; line-height:1.7; padding:14px; background:#221e19; border-radius:8px; border-left:3px solid #e8c98a; }
+.signal-row { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid #1e1a16; }
+.signal-row:last-child { border-bottom:none; }
+.signal-source { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#7a6f63; background:#221e19; padding:2px 7px; border-radius:4px; flex-shrink:0; min-width:90px; text-align:center; }
+.signal-text { font-size:12px; color:#c4b49a; line-height:1.5; }
+.drop-box { background:#0f1e18; border:1px dashed #2a4030; border-radius:10px; padding:16px 20px; }
+.drop-box p { font-size:12px; color:#5cad7a; line-height:1.6; margin-bottom:6px; }
+.drop-box code { font-size:11px; color:#8ac890; background:#1a2e22; padding:2px 6px; border-radius:4px; }
+
+/* ── REFERENCE ── */
+.rule-card { background:#1e1612; border:1px solid #3a2820; border-radius:12px; padding:20px; }
+.rule { display:flex; gap:12px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid #2a2520; }
+.rule:last-child { margin-bottom:0; padding-bottom:0; border-bottom:none; }
+.rule-emoji { font-size:18px; flex-shrink:0; margin-top:2px; }
+.rule-title { font-size:13px; font-weight:600; color:#e8c98a; margin-bottom:3px; }
+.rule-body { font-size:12px; color:#9a8e80; line-height:1.5; }
+.phase-list { display:flex; flex-direction:column; gap:8px; }
+.phase-item { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:8px; background:#221e19; }
+.phase-num { font-size:11px; background:#2e2820; color:#8a7a68; border-radius:4px; padding:2px 7px; font-weight:600; flex-shrink:0; }
+.phase-name { font-size:13px; color:#c4b49a; flex:1; }
+.phase-status { font-size:11px; padding:2px 8px; border-radius:20px; font-weight:500; }
+.status-now { background:#3a2a0e; color:#d4a843; }
+.status-soon { background:#1e2e24; color:#5cad7a; }
+.status-later { background:#1a1612; color:#5a5047; border:1px solid #2a2520; }
+.files-list { display:flex; flex-direction:column; gap:8px; }
+.file-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:#1a1612; border:1px solid #2a2520; border-radius:8px; }
+.file-icon { font-size:16px; flex-shrink:0; }
+.file-name { font-size:13px; font-weight:500; color:#c4b49a; }
+.file-path { font-size:10px; color:#5a5047; margin-top:1px; font-family:monospace; }
+.file-tag { font-size:10px; padding:2px 7px; border-radius:4px; margin-left:auto; flex-shrink:0; }
+.tag-live { background:#1a2e22; color:#5cad7a; }
+.tag-ref { background:#2a2520; color:#7a6f63; }
+.tag-new { background:#3a2a0e; color:#d4a843; }
+
+/* ── ACADEMY ── */
+.academy-section { margin-bottom: 28px; }
+.academy-section h3 { font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#e8c98a; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #2a2520; }
+.resource-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.resource-grid.three { grid-template-columns:1fr 1fr 1fr; }
+.resource-card { background:#1a1612; border:1px solid #2a2520; border-radius:10px; padding:14px 16px; text-decoration:none; display:block; transition:all 0.15s; }
+.resource-card:hover { border-color:#e8c98a; background:#221e19; }
+.resource-type { font-size:9px; letter-spacing:2px; text-transform:uppercase; margin-bottom:6px; font-weight:700; }
+.rt-watch { color:#e05252; } .rt-read { color:#5cad7a; } .rt-listen { color:#6090e0; } .rt-attend { color:#d4a843; }
+.resource-title { font-size:13px; font-weight:600; color:#e0d8ce; margin-bottom:3px; }
+.resource-desc { font-size:11px; color:#7a6f63; line-height:1.4; }
+.resource-tag { font-size:10px; background:#2e2820; color:#8a7a68; padding:2px 7px; border-radius:4px; display:inline-block; margin-top:6px; }
+.priority-strip { background:#251a0a; border:1px solid #6a3a0a; border-radius:10px; padding:16px 18px; margin-bottom:20px; }
+.priority-strip h4 { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#d4a843; margin-bottom:12px; }
+.sprint-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:0; }
+.sprint-week { background:#1a1612; border:1px solid #2a2520; border-radius:8px; padding:12px 14px; }
+.sprint-week-label { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#e8c98a; margin-bottom:8px; }
+.sprint-item { font-size:11px; color:#9a8e80; line-height:1.6; padding-left:10px; position:relative; }
+.sprint-item::before { content:"→"; position:absolute; left:0; color:#5a5047; }
+/* ── MISC ── */
+.divider { height:1px; background:#2a2520; margin:20px 0; }
+.section-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#7a6f63; margin-bottom:12px; }
+.footer { padding:16px 24px; text-align:center; font-size:11px; color:#4a4238; letter-spacing:1px; border-top:1px solid #1a1612; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">Myma</div>
+    <div class="login-sub">Business OS</div>
+    <input class="login-input" type="password" id="login-pass" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')tryLogin()" />
+    <button class="login-btn" onclick="tryLogin()">Enter</button>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-footer">Myma / Drogam Americas &mdash; Private</div>
+  </div>
+</div>
+
+<!-- ALERT -->
+<div class="alert-banner">
+  <div class="alert-left">
+    <span>🎁</span>
+    <span class="alert-text">Sep 20 — Día del Amor y la Amistad</span>
+    <span class="alert-sub">Content brief to Natalia must go out THIS WEEK or you miss the window</span>
+  </div>
+  <div class="alert-countdown" id="countdownBadge">-- days left</div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo"><h1>Myma</h1><span>Business OS</span></div>
+  <div class="header-right">
+    <div class="date" id="currentDate"></div>
+    <div class="watchman-badge">✓ Watchman ran Aug 2</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <button class="tab-btn active"  onclick="switchTab('dashboard',this)">📊 Dashboard</button>
+  <button class="tab-btn"         onclick="switchTab('team',this)">👥 My Team</button>
+  <button class="tab-btn"         onclick="switchTab('ruby',this)">💎 Working with Ruby</button>
+  <button class="tab-btn"         onclick="switchTab('pulse',this)">📈 Market Intelligence</button>
+  <button class="tab-btn"         onclick="switchTab('ref',this)">📚 Reference</button>
+  <button class="tab-btn"         onclick="switchTab('academy',this)">🎓 Academy</button>
+</div>
+
+<!-- ═══════════════════════════════════ TAB 1: DASHBOARD ═══════════════════════════════════ -->
+<div id="tab-dashboard" class="tab-content active">
+
+  <div class="grid">
+    <div class="card"><div class="card-label">Business Stage</div><div class="card-value" style="font-size:20px;margin-top:4px">Pre-Launch</div><div class="card-sub">LLC not yet formed</div></div>
+    <div class="card urgent"><div class="card-label">🔴 Critical Blockers</div><div class="card-value">5</div><div class="card-sub">All block downstream progress</div></div>
+    <div class="card"><div class="card-label">Sep 20 Gift Campaign</div><div class="card-value" id="daysLeft" style="font-size:28px">--</div><div class="card-sub">days — content brief due NOW</div></div>
+  </div>
+
+  <!-- Active Workstreams -->
+  <div class="section-title">⚡ Active Workstreams</div>
+  <div class="ws-grid">
+    <div class="ws-card new-stream"><div class="ws-icon">🧪</div><div class="ws-name">White Label Mfg</div><div class="ws-who">Luisa + Bradley</div><div class="ws-status ws-new">NEW</div></div>
+    <div class="ws-card"><div class="ws-icon">📱</div><div class="ws-name">Marketing Calendar</div><div class="ws-who">Natalia + Lorena</div><div class="ws-status ws-now">URGENT</div></div>
+    <div class="ws-card"><div class="ws-icon">📒</div><div class="ws-name">Sales Catalog Upgrade</div><div class="ws-who">Sales team — next week</div><div class="ws-status ws-soon">NEXT WEEK</div></div>
+    <div class="ws-card"><div class="ws-icon">🔄</div><div class="ws-name">Feedback Loop</div><div class="ws-who">Pharmacists + Instagram</div><div class="ws-status ws-new">DESIGNING</div></div>
+    <div class="ws-card"><div class="ws-icon">⚖️</div><div class="ws-name">FDA / MoCRA</div><div class="ws-who">Mauricio (Fast Forward)</div><div class="ws-status ws-blocked">BLOCKED ON SPECS</div></div>
+    <div class="ws-card"><div class="ws-icon">🏢</div><div class="ws-name">LLC Formation</div><div class="ws-who">SunBiz.org · $125</div><div class="ws-status ws-blocked">NOT STARTED</div></div>
+    <div class="ws-card"><div class="ws-icon">🚢</div><div class="ws-name">Supply Chain</div><div class="ws-who">Diego + Customs Broker</div><div class="ws-status ws-blocked">OVERDUE</div></div>
+    <div class="ws-card"><div class="ws-icon">🤝</div><div class="ws-name">Distribution</div><div class="ws-who">E.F. Tropics #1</div><div class="ws-status ws-soon">PIPELINE</div></div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Priorities -->
+    <div class="card">
+      <h3>⚡ This Week's Priorities</h3>
+      <ul class="priority-list">
+        <li class="priority-item hot">
+          <div class="priority-num red">1</div>
+          <div><div class="priority-title">Book customs broker call — 9 days overdue</div><div class="priority-sub">Nothing about inventory, duties, or import logistics moves until this is done.</div></div>
+          <div class="priority-who">Valentina</div>
+        </li>
+        <li class="priority-item hot">
+          <div class="priority-num red">2</div>
+          <div><div class="priority-title">Sep 20 campaign brief → Natalia TODAY</div><div class="priority-sub">49 days out. Brief needs: gift kit concept, visual direction, copy angle. Ask Ruby to draft it now.</div></div>
+          <div class="priority-who">Valentina + Ruby</div>
+        </li>
+        <li class="priority-item hot">
+          <div class="priority-num red">3</div>
+          <div><div class="priority-title">Forward Luisa/Bradley email to Ruby</div><div class="priority-sub">Ruby will analyze product vision, extract key decisions, and prep the white label strategy.</div></div>
+          <div class="priority-who">Valentina</div>
+        </li>
+        <li class="priority-item">
+          <div class="priority-num">4</div>
+          <div><div class="priority-title">Call Diego — COGS + revenue share (90 min)</div><div class="priority-sub">No pricing model without factory cost. No LLC agreement without revenue share.</div></div>
+          <div class="priority-who">Valentina</div>
+        </li>
+        <li class="priority-item">
+          <div class="priority-num">5</div>
+          <div><div class="priority-title">Push Julián — spec sheets to Mauricio</div><div class="priority-sub">FDA classification is fully blocked until Mauricio has the specs and labels.</div></div>
+          <div class="priority-who">Valentina</div>
+        </li>
+        <li class="priority-item">
+          <div class="priority-num">6</div>
+          <div><div class="priority-title">Schedule Luisa working session</div><div class="priority-sub">Understand what she can create, timeline, white label capacity. See Team tab for prep questions.</div></div>
+          <div class="priority-who">Valentina</div>
+        </li>
+        <li class="priority-item">
+          <div class="priority-num">7</div>
+          <div><div class="priority-title">Set up biweekly cadence with Natalia</div><div class="priority-sub">Weekly or biweekly alignment — content calendar, what's needed from Valentina, upcoming hooks.</div></div>
+          <div class="priority-who">Valentina + Natalia</div>
+        </li>
+      </ul>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <!-- Blockers -->
+      <div class="card">
+        <h3>🚨 Open Blockers</h3>
+        <ul class="blocker-list">
+          <li class="blocker"><div class="blocker-dot dot-red"></div><div style="flex:1"><div class="blocker-title">Customs broker call</div><div class="blocker-sub">Blocks inventory chain</div></div><div class="blocker-days">9d late</div></li>
+          <li class="blocker"><div class="blocker-dot dot-red"></div><div><div class="blocker-title">Spec sheets → Mauricio</div><div class="blocker-sub">Blocks FDA + quote</div></div></li>
+          <li class="blocker"><div class="blocker-dot dot-red"></div><div><div class="blocker-title">Revenue share structure</div><div class="blocker-sub">Blocks LLC agreement</div></div></li>
+          <li class="blocker"><div class="blocker-dot dot-yellow"></div><div><div class="blocker-title">COGS from Diego</div><div class="blocker-sub">Blocks all pricing</div></div></li>
+          <li class="blocker"><div class="blocker-dot dot-yellow"></div><div><div class="blocker-title">Florida LLC — $125 SunBiz</div><div class="blocker-sub">Everything legal frozen</div></div></li>
+        </ul>
+      </div>
+
+      <!-- Agents -->
+      <div class="card">
+        <h3>🤖 Automated Agents</h3>
+        <div class="agents-list">
+          <div class="agent-row"><div class="agent-icon">📊</div><div style="flex:1"><div class="agent-name">Market Pulse</div><div class="agent-desc">Script + Qwen3 local. No API cost.</div></div><div class="agent-time">Mon 7 AM</div></div>
+          <div class="agent-row"><div class="agent-icon">📋</div><div style="flex:1"><div class="agent-name">Morning Standup</div><div class="agent-desc">Top 5 actions this week</div></div><div class="agent-time">Mon 8 AM</div></div>
+          <div class="agent-row"><div class="agent-icon">👁️</div><div style="flex:1"><div class="agent-name">Watchman Digest</div><div class="agent-desc">What moved / what's blocked</div></div><div class="agent-time">Sun 7 PM</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ TAB 2: MY TEAM ═══════════════════════════════════ -->
+<div id="tab-team" class="tab-content">
+  <div class="team-layout">
+    <!-- Left: contact list -->
+    <div class="contact-list-panel" id="contactList"></div>
+    <!-- Right: detail panel -->
+    <div class="detail-panel" id="detailPanel">
+      <p style="color:#7a6f63;font-size:13px;margin-top:40px;text-align:center">← Select a person to see their tasks</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ TAB 3: WORKING WITH RUBY ═══════════════════════════════════ -->
+<div id="tab-ruby" class="tab-content">
+  <div class="guide-intro">
+    <strong>Hi Valentina 👋</strong><br><br>
+    I'm Ruby — your AI business partner for Myma. I have full context on everything: the brand story, the blockers, the FDA rules, the distributors, every person you're working with, the white label project, Luisa, Bradley, Natalia. You don't need to explain background.<br><br>
+    Think of me as a team member who never sleeps, never forgets, and is always available in the Telegram chat. The more you tell me, the smarter I get.
+  </div>
+  <div class="guide-section">
+    <h3>📱 How to Reach Me</h3>
+    <div class="how-list">
+      <div class="how-item"><div class="how-icon">🎙️</div><div><div class="how-title">Voice Note (Telegram)</div><div class="how-body">Send a voice message in the Drogam group chat. I transcribe and act immediately. Great for driving or thinking out loud.</div><div class="how-example">"Ruby, I just got off the call with Diego — he said COGS is $0.85/unit for orders over 500. Save that."</div></div></div>
+      <div class="how-item"><div class="how-icon">📧</div><div><div class="how-title">Forward emails to Ruby</div><div class="how-body">Forward any email from Luisa, Bradley, Diego, Mauricio directly in the chat. I'll extract decisions, flag questions, and tell you what to do next.</div><div class="how-example">Forward the Luisa/Bradley email → I'll analyze the product vision and draft a response strategy</div></div></div>
+      <div class="how-item"><div class="how-icon">💬</div><div><div class="how-title">Just talk</div><div class="how-body">No special commands. Just say what you need.</div><div class="how-example">"Ruby, draft the Sep 20 campaign brief for Natalia" or "Ruby, what questions should I ask Luisa?"</div></div></div>
+    </div>
+  </div>
+  <div class="guide-section">
+    <h3>💡 Things to Ask Right Now</h3>
+    <div class="asks-grid">
+      <div class="ask-chip">Draft the Sep 20 Día del Amor brief for Natalia</div>
+      <div class="ask-chip">What questions should I ask Luisa in our first working session?</div>
+      <div class="ask-chip">Explain how white label manufacturing margins work</div>
+      <div class="ask-chip">Draft an intro email to E.F. Tropics</div>
+      <div class="ask-chip">Help me prep for the sales team catalog meeting</div>
+      <div class="ask-chip">Design a pharmacist feedback form for the sales team</div>
+      <div class="ask-chip">What should Natalia's biweekly meeting agenda look like?</div>
+      <div class="ask-chip">Summarize the Luisa/Bradley email [forward it first]</div>
+      <div class="ask-chip">What are the FDA rules for this ingredient/claim?</div>
+      <div class="ask-chip">Help me figure out margins if Diego charges X/unit</div>
+    </div>
+  </div>
+  <div class="guide-section">
+    <h3>🔒 What Needs Your Go-Ahead</h3>
+    <div class="wont-list">
+      <div class="wont-item">Send any email or message to an external person</div>
+      <div class="wont-item">Make any financial commitment or agreement</div>
+      <div class="wont-item">Post to Instagram, TikTok, or any public platform</div>
+      <div class="wont-item">Share private business data outside the workspace</div>
+    </div>
+  </div>
+  <div class="guide-section">
+    <h3>🕐 What Runs Automatically</h3>
+    <div class="how-list">
+      <div class="how-item" style="padding:10px 14px"><div class="how-icon">📊</div><div><div class="how-title">Monday 7 AM — Market Pulse</div><div class="how-body">Python script queries FDA, scrapes competitors, searches trends. Qwen3 (local AI, free) writes the narrative. Telegram summary sent automatically.</div></div></div>
+      <div class="how-item" style="padding:10px 14px"><div class="how-icon">📋</div><div><div class="how-title">Monday 8 AM — Morning Standup</div><div class="how-body">Top 5 things to focus on this week.</div></div></div>
+      <div class="how-item" style="padding:10px 14px"><div class="how-icon">👁️</div><div><div class="how-title">Sunday 7 PM — Watchman Digest</div><div class="how-body">What moved, what's blocked, what needs escalation. Sent to Telegram.</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ TAB 4: MARKET INTELLIGENCE ═══════════════════════════════════ -->
+<div id="tab-pulse" class="tab-content">
+  <div class="pulse-header">
+    <div><div class="section-title">Market Pulse</div><p style="font-size:12px;color:#7a6f63">Updated every Monday 7 AM ET · Python script + Qwen3 local · No API cost</p></div>
+    <div class="pulse-status">✓ First run Mon Aug 4</div>
+  </div>
+  <div class="pulse-card">
+    <div class="pulse-section-label">How It Works</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="signal-row" style="padding:8px 0;border:none"><div class="signal-source">Script</div><div class="signal-text">Queries openFDA, scrapes import alerts, runs DuckDuckGo competitor + trend searches</div></div>
+      <div class="signal-row" style="padding:8px 0;border:none"><div class="signal-source">Qwen3</div><div class="signal-text">Local AI model synthesizes narrative — finds the DELTA vs last week, free, private</div></div>
+      <div class="signal-row" style="padding:8px 0;border:none"><div class="signal-source">Output</div><div class="signal-text">Writes market-pulse/what_the_market_is_telling_us.md + sends Telegram summary</div></div>
+      <div class="signal-row" style="padding:8px 0;border:none"><div class="signal-source">Quarterly</div><div class="signal-text">FDA import refusals for Colombia, import alerts, MoCRA enforcement patterns</div></div>
+    </div>
+  </div>
+  <div class="grid-halves">
+    <div class="pulse-card" style="margin-bottom:0">
+      <div class="pulse-section-label">Current Signals (Baseline)</div>
+      <div class="signal-row"><div class="signal-source">Instagram</div><div class="signal-text">1,602 followers. Recurring: "where to buy?" + wholesale price asks. Funnel broken at channel clarity.</div></div>
+      <div class="signal-row"><div class="signal-source">FDA</div><div class="signal-text">Castor oil 6 events · rose water 6 · almond oil 6 · argan oil 69 (watch) · Colombia not on active alerts ✅</div></div>
+      <div class="signal-row"><div class="signal-source">Trends</div><div class="signal-text">Rose water + castor oil tutorials trending. Latin heritage skincare accelerating. Myma positioning is on-point.</div></div>
+      <div class="signal-row" style="border:none"><div class="signal-source">Competitors</div><div class="signal-text">Monastery: acne-positioning. Ceremonia: ingredient transparency scrutiny. Myma's family story is unreplicable.</div></div>
+    </div>
+    <div class="drop-box" style="margin-bottom:0">
+      <div class="pulse-section-label" style="margin-bottom:8px">📥 Contribute During the Week</div>
+      <p>Drop notes in Telegram chat or in <code>market-pulse/weekly-notes/</code>. Ruby picks them up every Monday.</p>
+      <p style="margin-top:8px">• Distributor replies — exact words</p>
+      <p>• DMs or comments that stood out</p>
+      <p>• Colombia updates from Julián or Diego</p>
+      <p>• Anything from a buyer or prospect</p>
+      <p>• Pharmacist feedback from sales team</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ TAB 5: REFERENCE ═══════════════════════════════════ -->
+<div id="tab-ref" class="tab-content">
+  <div class="grid-halves">
+    <div class="rule-card">
+      <h3 style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#7a6f63;margin-bottom:14px">⚡ The Golden Rules</h3>
+      <div class="rule"><div class="rule-emoji">🚫</div><div><div class="rule-title">Never say "treats / cures / heals"</div><div class="rule-body">Any medical claim on label, site, or social turns a cosmetic into an FDA drug. Ask Ruby before publishing anything.</div></div></div>
+      <div class="rule"><div class="rule-emoji">🧊</div><div><div class="rule-title">Hielo Mineral — off the line sheet</div><div class="rule-body">Camphor + menthol + methyl salicylate = OTC drug territory. Mauricio must classify it first.</div></div></div>
+      <div class="rule"><div class="rule-emoji">💄</div><div><div class="rule-title">Cacao Lip Balm — no "repairs" language</div><div class="rule-body">"Relieves/repairs lips" triggers OTC monograph. "Moisturizes" is safe.</div></div></div>
+      <div class="rule"><div class="rule-emoji">📝</div><div><div class="rule-title">No brand license = no legal right to operate</div><div class="rule-body">Brand license + supply agreement must exist before Drogam Americas can legally sell under Myma name.</div></div></div>
+      <div class="rule"><div class="rule-emoji">🧠</div><div><div class="rule-title">Every decision gets written down</div><div class="rule-body">Tell Ruby any decision so she can update the brain. Unwritten decisions don't survive session resets.</div></div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <h3>📦 Distribution Phases</h3>
+        <div class="phase-list">
+          <div class="phase-item"><div class="phase-num">1</div><div class="phase-name">Boutique / Indie Spas</div><div class="phase-status status-now">NOW</div></div>
+          <div class="phase-item"><div class="phase-num">2</div><div class="phase-name">Hispanic Channel (Miami, TX, CA)</div><div class="phase-status status-soon">3–9 mo</div></div>
+          <div class="phase-item"><div class="phase-num">3</div><div class="phase-name">CosmoProf / SalonCentric</div><div class="phase-status status-later">9–18 mo</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🎯 Phase 1 Targets</h3>
+        <div class="phase-list">
+          <div class="phase-item"><div class="phase-name" style="font-size:12px">E.F. Tropics — Jupiter, FL</div><div class="phase-status status-now">#1</div></div>
+          <div class="phase-item"><div class="phase-name" style="font-size:12px">Pure Spa Direct</div><div class="phase-status status-soon">High</div></div>
+          <div class="phase-item"><div class="phase-name" style="font-size:12px">Salon & Spa Wholesaler (Houston)</div><div class="phase-status status-soon">High</div></div>
+          <div class="phase-item"><div class="phase-name" style="font-size:12px">Suplery — B2B listing</div><div class="phase-status status-later">Low friction</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="section-title">🏗️ Brand Architecture</div>
+  <div class="grid" style="margin-bottom:20px">
+    <div class="card"><div class="card-label">Consumer Face</div><div style="font-size:22px;font-weight:700;color:#e8c98a;margin:8px 0 4px">Myma</div><div class="card-sub">What customers see</div></div>
+    <div class="card"><div class="card-label">Corporate</div><div style="font-size:16px;font-weight:700;color:#c4b49a;margin:8px 0 4px">Drogam Americas LLC</div><div class="card-sub">Florida entity — what suppliers + distributors deal with</div></div>
+    <div class="card"><div class="card-label">Heritage Stamp</div><div style="font-size:15px;font-weight:600;color:#9a8e80;margin:8px 0 4px;font-style:italic">"A Drogam Family Brand"</div><div class="card-sub">41 years of Colombian heritage</div></div>
+  </div>
+  <div class="divider"></div>
+  <div class="section-title">🛡️ FDA Intelligence</div>
+  <div class="grid" style="margin-bottom:16px">
+    <div class="card green-tint"><div class="card-label">Product Risk Profile</div><div style="font-size:18px;font-weight:700;color:#5cad7a;margin:8px 0 4px">LOW RISK ✓</div><div class="card-sub">Carrier oils, rose water = near-zero adverse events</div></div>
+    <div class="card"><div class="card-label">Small Biz Exemption</div><div style="font-size:18px;font-weight:700;color:#e8c98a;margin:8px 0 4px">Applies Now</div><div class="card-sub">&lt;$1M US sales = exempt from registration right now</div></div>
+    <div class="card"><div class="card-label">Colombia → US Duty</div><div style="font-size:18px;font-weight:700;color:#5cad7a;margin:8px 0 4px">0% (CTPA)</div><div class="card-sub">HS 3304.99 cosmetic preparations enter duty-free</div></div>
+  </div>
+  <div class="divider"></div>
+  <div class="section-title">📁 Key Files</div>
+  <div class="files-list">
+    <div class="file-item"><div class="file-icon">📊</div><div style="flex:1"><div class="file-name">Market Pulse — Weekly Report</div><div class="file-path">myma-brand/market-pulse/what_the_market_is_telling_us.md</div></div><div class="file-tag tag-new">Mon 7AM</div></div>
+    <div class="file-item"><div class="file-icon">🤝</div><div style="flex:1"><div class="file-name">White Label Manufacturing Guide</div><div class="file-path">drogam/research/white-label-guide.md</div></div><div class="file-tag tag-new">NEW</div></div>
+    <div class="file-item"><div class="file-icon">⚖️</div><div style="flex:1"><div class="file-name">FDA Intelligence Sources + Compliance Path</div><div class="file-path">drogam/research/fda-intelligence-sources.md</div></div><div class="file-tag tag-live">Live</div></div>
+    <div class="file-item"><div class="file-icon">📖</div><div style="flex:1"><div class="file-name">Brand Narrative</div><div class="file-path">myma-brand/brand-narrative.md</div></div><div class="file-tag tag-live">Live</div></div>
+    <div class="file-item"><div class="file-icon">📅</div><div style="flex:1"><div class="file-name">H2 2026 Marketing Plan</div><div class="file-path">myma-brand/drogam-h2-marketing-plan.md</div></div><div class="file-tag tag-live">Live</div></div>
+    <div class="file-item"><div class="file-icon">❓</div><div style="flex:1"><div class="file-name">Questions for Diego — Before Any Supply Commitment</div><div class="file-path">drogam/valentina-followup-list.md</div></div><div class="file-tag tag-ref">Reference</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ TAB 6: ACADEMY ═══════════════════════════════════ -->
+<div id="tab-academy" class="tab-content">
+
+  <!-- BEFORE LUISA MEETING -->
+  <div class="priority-strip">
+    <h4>⚡ Watch These Before Your Luisa Meeting</h4>
+    <div class="resource-grid three">
+      <a class="resource-card" href="https://www.youtube.com/watch?v=e_V6DU-gal4" target="_blank">
+        <div class="resource-type rt-watch">▶ WATCH</div>
+        <div class="resource-title">Can You Mix Niacinamide + Hyaluronic Acid?</div>
+        <div class="resource-desc">Cosmetic chemist explains the two key actives in the EEG project</div>
+        <div class="resource-tag">YouTube · 3 min</div>
+      </a>
+      <a class="resource-card" href="https://www.youtube.com/watch?v=pZA1P9jWgcs" target="_blank">
+        <div class="resource-type rt-watch">▶ WATCH</div>
+        <div class="resource-title">Cosmetic Stability Testing Guide</div>
+        <div class="resource-desc">DIY methods + professional options — exactly what Luisa needs to do before EEG samples ship</div>
+        <div class="resource-tag">YouTube · 2025</div>
+      </a>
+      <a class="resource-card" href="https://www.youtube.com/results?search_query=perry+romanowski+how+cosmetic+formulas+are+made" target="_blank">
+        <div class="resource-type rt-watch">▶ WATCH</div>
+        <div class="resource-title">How Cosmetic Formulas Are Made</div>
+        <div class="resource-desc">Perry Romanowski — understand what Luisa does so you can be a smart client</div>
+        <div class="resource-tag">Chemists Corner · YouTube</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- YOUTUBE CHANNELS -->
+  <div class="academy-section">
+    <h3>📺 YouTube Channels — Subscribe Now</h3>
+    <div class="resource-grid">
+      <a class="resource-card" href="https://www.youtube.com/@CosmeticChemist" target="_blank">
+        <div class="resource-type rt-watch">▶ CHANNEL</div>
+        <div class="resource-title">Chemists Corner — Perry Romanowski</div>
+        <div class="resource-desc">Former cosmetic chemist. Formulation science, ingredient deep dives, how products are made. Watch before every Luisa meeting.</div>
+        <div class="resource-tag">youtube.com/@CosmeticChemist</div>
+      </a>
+      <a class="resource-card" href="https://www.youtube.com/@labmuffin" target="_blank">
+        <div class="resource-type rt-watch">▶ CHANNEL</div>
+        <div class="resource-title">Lab Muffin Beauty Science</div>
+        <div class="resource-desc">PhD chemist explains the science behind skincare in plain English. Best for understanding what ceramides, squalane, and HA actually do.</div>
+        <div class="resource-tag">youtube.com/@labmuffin</div>
+      </a>
+      <a class="resource-card" href="https://www.youtube.com/@FormulaBotanica" target="_blank">
+        <div class="resource-type rt-watch">▶ CHANNEL</div>
+        <div class="resource-title">Formula Botanica</div>
+        <div class="resource-desc">Organic cosmetic formulation school. Indie botanical brand founders. Closest channel to Myma's story — heritage, botanical, founder-led.</div>
+        <div class="resource-tag">youtube.com/@FormulaBotanica</div>
+      </a>
+      <a class="resource-card" href="https://www.youtube.com/results?search_query=lab+muffin+beauty+science+ceramides" target="_blank">
+        <div class="resource-type rt-watch">▶ SEARCH</div>
+        <div class="resource-title">Lab Muffin — Ceramides Deep Dive</div>
+        <div class="resource-desc">Ceramides are the #1 active in the EEG moisturizer spec. Watch this before you next talk to Luisa about that formula.</div>
+        <div class="resource-tag">YouTube Search</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- SPECIFIC VIDEOS -->
+  <div class="academy-section">
+    <h3>🎬 Specific Videos — Watch in Order</h3>
+    <div class="resource-grid three">
+      <a class="resource-card" href="https://www.youtube.com/watch?v=e_V6DU-gal4" target="_blank">
+        <div class="resource-type rt-watch">▶ #1 FIRST</div>
+        <div class="resource-title">Niacinamide + Hyaluronic Acid</div>
+        <div class="resource-desc">These are two of the four key actives in every EEG product. Understand them before talking to Luisa.</div>
+        <div class="resource-tag">3 min</div>
+      </a>
+      <a class="resource-card" href="https://www.youtube.com/watch?v=pZA1P9jWgcs" target="_blank">
+        <div class="resource-type rt-watch">▶ #2</div>
+        <div class="resource-title">Stability Testing Explained</div>
+        <div class="resource-desc">This is why the EEG timeline is 4–5 months, not 4–5 weeks. Understanding this = no unrealistic promises to Bradlee.</div>
+        <div class="resource-tag">June 2025</div>
+      </a>
+      <a class="resource-card" href="https://www.youtube.com/results?search_query=perry+romanowski+squalane+skincare+formulation" target="_blank">
+        <div class="resource-type rt-watch">▶ #3</div>
+        <div class="resource-title">Squalane in Skincare</div>
+        <div class="resource-desc">Squalane is in the EEG spec for all 4 products. Know what it is and why the client wants it.</div>
+        <div class="resource-tag">Chemists Corner</div>
+      </a>
+      <a class="resource-card" href="https://www.inc.com/cheryl-wischhover/how-babba-rivera-built-ceremonia/91153358" target="_blank">
+        <div class="resource-type rt-read" style="color:#9acd5a">📖 READ</div>
+        <div class="resource-title">How Babba Rivera Built Ceremonia — Inc.</div>
+        <div class="resource-desc">Dominican heritage → Sephora. The closest brand story to Myma. Read this as a roadmap, not just inspiration.</div>
+        <div class="resource-tag">Inc. Magazine · 2025</div>
+      </a>
+      <a class="resource-card" href="https://remezcla.com/features/culture/babba-rivera-ceremonia-interview/" target="_blank">
+        <div class="resource-type rt-read" style="color:#9acd5a">📖 READ</div>
+        <div class="resource-title">Get to Know Babba Rivera — Remezcla</div>
+        <div class="resource-desc">Deep interview on heritage, brand identity, and building an authentic Latinx brand. Very close to Myma's playbook.</div>
+        <div class="resource-tag">Remezcla · 2025</div>
+      </a>
+      <a class="resource-card" href="https://www.femalestartupclub.com/blogs/podcasts/babba-rivera-ceremonia" target="_blank">
+        <div class="resource-type rt-listen">🎙 LISTEN</div>
+        <div class="resource-title">Babba Rivera — Female Startup Club Podcast</div>
+        <div class="resource-desc">How she raised $1M+, launched from the NICU, and built a Latina beauty brand. The stories in here are priceless.</div>
+        <div class="resource-tag">Podcast · Female Startup Club</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- PODCASTS -->
+  <div class="academy-section">
+    <h3>🎙 Podcasts — Listen While You Drive</h3>
+    <div class="resource-grid">
+      <a class="resource-card" href="https://formulabotanica.com/podcast/" target="_blank">
+        <div class="resource-type rt-listen">🎙 PODCAST</div>
+        <div class="resource-title">Formula Botanica Podcast</div>
+        <div class="resource-desc">Indie organic beauty brand founders. Heritage, botanical, natural — the closest podcast to Myma's story and positioning.</div>
+        <div class="resource-tag">formulabotanica.com/podcast</div>
+      </a>
+      <a class="resource-card" href="https://www.glossy.co/podcast/" target="_blank">
+        <div class="resource-type rt-listen">🎙 PODCAST</div>
+        <div class="resource-title">Business of Beauty — Glossy</div>
+        <div class="resource-desc">How real beauty brands built their businesses. Distribution, retail, DTC, fundraising. This is the MBA version.</div>
+        <div class="resource-tag">glossy.co/podcast</div>
+      </a>
+      <a class="resource-card" href="https://www.ascpskincare.com/esty-talk" target="_blank">
+        <div class="resource-type rt-listen">🎙 PODCAST</div>
+        <div class="resource-title">ASCP Esty Talk</div>
+        <div class="resource-desc">Estheticians talking about what they buy and recommend. This is the end buyer for EEG's client. Know their world.</div>
+        <div class="resource-tag">ascpskincare.com</div>
+      </a>
+      <a class="resource-card" href="https://www.youtube.com/results?search_query=beauty+brains+podcast+cosmetic+science" target="_blank">
+        <div class="resource-type rt-listen">🎙 PODCAST</div>
+        <div class="resource-title">The Beauty Brains</div>
+        <div class="resource-desc">Two cosmetic chemists answering beauty questions. Great for formulation fundamentals — search on Spotify or Apple.</div>
+        <div class="resource-tag">Spotify / Apple Podcasts</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- WEBSITES -->
+  <div class="academy-section">
+    <h3>📰 Websites — Read Twice a Week</h3>
+    <div class="resource-grid three">
+      <a class="resource-card" href="https://beautyindependent.com" target="_blank">
+        <div class="resource-type rt-read" style="color:#5cad7a">📰 #1 PRIORITY</div>
+        <div class="resource-title">Beauty Independent</div>
+        <div class="resource-desc">The only publication covering indie beauty the way you need it — distribution, retail, manufacturing, compliance. Subscribe to the newsletter. Read it twice a week.</div>
+        <div class="resource-tag">beautyindependent.com</div>
+      </a>
+      <a class="resource-card" href="https://chemistscorner.com" target="_blank">
+        <div class="resource-type rt-read" style="color:#5cad7a">📰 BLOG</div>
+        <div class="resource-title">Chemists Corner — Blog</div>
+        <div class="resource-desc">Perry Romanowski's blog. Formulation, testing, working with manufacturers. Read his stability testing and INCI articles before Luisa meeting.</div>
+        <div class="resource-tag">chemistscorner.com</div>
+      </a>
+      <a class="resource-card" href="https://www.indiebeautyacademy.com/" target="_blank">
+        <div class="resource-type rt-read" style="color:#5cad7a">📰 COURSE</div>
+        <div class="resource-title">Indie Beauty Academy</div>
+        <div class="resource-desc">Full indie brand launch curriculum — validating, branding, product development, pricing, distribution. When you're ready to go deep.</div>
+        <div class="resource-tag">indiebeautyacademy.com</div>
+      </a>
+      <a class="resource-card" href="https://www.fda.gov/cosmetics/cosmetics-laws-regulations/modernization-cosmetics-regulation-act-2022-mocra" target="_blank">
+        <div class="resource-type rt-read" style="color:#e05252">⚖️ FDA</div>
+        <div class="resource-title">MoCRA — FDA Official Page</div>
+        <div class="resource-desc">The law governing all cosmetics you'll sell in the US. Bookmark it. The FAQ section answers most questions before you need to call Mauricio.</div>
+        <div class="resource-tag">fda.gov</div>
+      </a>
+      <a class="resource-card" href="https://www.registrarcorp.com/services/fda-registration/cosmetics/" target="_blank">
+        <div class="resource-type rt-read" style="color:#e05252">⚖️ COMPLIANCE</div>
+        <div class="resource-title">Registrar Corp — MoCRA Guide</div>
+        <div class="resource-desc">Your preferred FDA compliance vendor. Free webinars on their site explain exactly what Drogam needs to register. Watch before calling Mauricio.</div>
+        <div class="resource-tag">registrarcorp.com</div>
+      </a>
+      <a class="resource-card" href="https://formulabotanica.com/beauty-business-resources/" target="_blank">
+        <div class="resource-type rt-read" style="color:#5cad7a">📰 RESOURCES</div>
+        <div class="resource-title">Formula Botanica — Resource Library</div>
+        <div class="resource-desc">Curated resources for indie beauty founders — formulation, business, sustainability. Great starting point for the Myma brand build.</div>
+        <div class="resource-tag">formulabotanica.com</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- FDA GMP GUIDE -->
+  <div class="academy-section">
+    <h3>🏛️ FDA Official Guides — Read These</h3>
+    <div class="resource-grid">
+      <a class="resource-card" href="https://www.fda.gov/media/86366/download" target="_blank" style="border-color:#3a1a08;background:#1a0e08">
+        <div class="resource-type rt-read" style="color:#e05252">📋 FDA OFFICIAL GUIDE</div>
+        <div class="resource-title">Cosmetic Good Manufacturing Practices (GMP)</div>
+        <div class="resource-desc">FDA’s standard for how cosmetics must be manufactured. Diego’s factory must meet this to ship to the US. If they’re ISO 22716 certified, they already comply. Ask Diego this question before any US distributor conversation.</div>
+        <div style="margin-top:8px;font-size:11px;color:#9a8e80;line-height:1.5">
+          Covers: documentation, facilities, equipment, personnel, raw materials, production SOPs, lab controls, internal audit, complaints + recalls. Prohibited ingredients listed (none apply to Drogam’s products). Color additives must be FDA-approved.
+        </div>
+        <div class="resource-tag" style="background:#3a1a08;color:#e05252">PDF · fda.gov · Updated 2013 · Save This</div>
+      </a>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="background:#221e19;border-radius:8px;padding:12px 14px">
+          <div style="font-size:11px;font-weight:700;color:#e8c98a;margin-bottom:8px">Why This Matters for Drogam</div>
+          <div style="font-size:12px;color:#9a8e80;line-height:1.6">
+            <b style="color:#c4b49a">EEG/Bradley project:</b> Luisa’s lab must follow GMP standards when developing the 4 new skincare formulas. Any client (including EEG’s end customer) will ask for GMP documentation before placing commercial orders.<br><br>
+            <b style="color:#c4b49a">US distributors:</b> E.F. Tropics and CosmoProf will ask “is your manufacturer GMP-compliant?” before listing your products. This document tells you what that means.<br><br>
+            <b style="color:#c4b49a">Ask Diego:</b> Is the Cali factory ISO 22716 certified? If yes — you’re already GMP-compliant for most US buyers. If no — add it to the roadmap.
+          </div>
+        </div>
+        <a class="resource-card" href="https://www.fda.gov/cosmetics/cosmetics-laws-regulations/modernization-cosmetics-regulation-act-2022-mocra" target="_blank">
+          <div class="resource-type rt-read" style="color:#e05252">📋 FDA OFFICIAL</div>
+          <div class="resource-title">MoCRA — The New Cosmetics Law</div>
+          <div class="resource-desc">The 2022 law that changed everything for cosmetics in the US. Read the FAQ section. Bookmark it.</div>
+          <div class="resource-tag" style="background:#3a1a08;color:#e05252">fda.gov · Bookmark</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- INDUSTRY ORGS + TRADE SHOWS -->
+  <div class="grid-halves">
+    <div class="academy-section" style="margin-bottom:0">
+      <h3>🏛 Industry Organizations</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <a class="resource-card" href="https://cew.org" target="_blank" style="padding:10px 14px">
+          <div class="resource-title" style="font-size:12px">CEW — Cosmetic Executive Women</div>
+          <div class="resource-desc">The most influential women's network in US beauty. Free newsletter. Join it.</div>
+        </a>
+        <a class="resource-card" href="https://icmad.org" target="_blank" style="padding:10px 14px">
+          <div class="resource-title" style="font-size:12px">ICMAD — Independent Cosmetics Mfrs</div>
+          <div class="resource-desc">For indie brands exactly like Myma. Regulatory guidance, FDA updates, community.</div>
+        </a>
+        <a class="resource-card" href="https://www.ascpskincare.com" target="_blank" style="padding:10px 14px">
+          <div class="resource-title" style="font-size:12px">ASCP — Skin Care Professionals</div>
+          <div class="resource-desc">The esthetician community EEG's client sells through. Know your eventual buyer.</div>
+        </a>
+        <a class="resource-card" href="https://www.beautybrandr.com/" target="_blank" style="padding:10px 14px">
+          <div class="resource-title" style="font-size:12px">Beautybrandr</div>
+          <div class="resource-desc">Strategic advisory + private label for indie founders. Good 1:1 advisory option when you're ready.</div>
+        </a>
+      </div>
+    </div>
+    <div class="academy-section" style="margin-bottom:0">
+      <h3>🎪 Trade Shows — Know the Calendar</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <a class="resource-card" href="https://gondola.fenalco.com.co/event/gondola-2026-185/register" target="_blank" style="padding:10px 14px;border-color:#3a2a0e">
+          <div class="resource-type rt-attend" style="margin-bottom:4px">★ YOU'RE ATTENDING</div>
+          <div class="resource-title" style="font-size:12px">GÓNDOLA 2026 — Oct 28–30</div>
+          <div class="resource-desc">Cartagena, Colombia. FENALCO retail conference. Colombia's pharmacy + distributor channel in one room.</div>
+        </a>
+        <a class="resource-card" href="https://www.iecsc.com" target="_blank" style="padding:10px 14px">
+          <div class="resource-title" style="font-size:12px">IECSC New York — March</div>
+          <div class="resource-desc">Esthetics, spa, medi-spa. The exact channel for EEG's client. Plan to attend 2027.</div>
+        </a>
+        <a class="resource-card" href="https://cosmoprofnorthamerica.com" target="_blank" style="padding:10px 14px">
+          <div class="resource-title" style="font-size:12px">Cosmoprof North America — July</div>
+          <div class="resource-desc">Biggest indie beauty trade show in the US. Where distributors find brands. Las Vegas.</div>
+        </a>
+        <a class="resource-card" href="https://www.youtube.com/results?search_query=cosmoprof+indie+beauty+brand+how+to+exhibit" target="_blank" style="padding:10px 14px">
+          <div class="resource-title" style="font-size:12px">How to Exhibit at Cosmoprof</div>
+          <div class="resource-desc">Watch this YouTube search before deciding to exhibit — understand the cost/benefit for indie brands.</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">MYMA / DROGAM AMERICAS — BUSINESS OS · Powered by Ruby 💎</div>
+
+<script>
+// ── AUTH (password stored as SHA-256 hash — not visible in source) ──
+const AUTH_KEY  = 'drogam_auth_v1';
+const PASS_HASH = '61f087ef7fd8887091fffa8e383b73d0b732bfde8c4bb8375a2a2aa5fa086d2e';
+
+async function tryLogin() {
+  const val = document.getElementById('login-pass').value;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(val));
+  const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  if (hex === PASS_HASH) {
+    localStorage.setItem(AUTH_KEY, '1');
+    document.getElementById('login-overlay').style.display = 'none';
+  } else {
+    document.getElementById('login-error').textContent = 'Wrong password — try again';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-pass').focus();
+  }
+}
+
+(function() {
+  if (localStorage.getItem(AUTH_KEY) === '1') {
+    document.getElementById('login-overlay').style.display = 'none';
+  }
+})();
+
+// ── DATE + COUNTDOWN ──
+const d = new Date();
+document.getElementById('currentDate').textContent = d.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+const sep20 = new Date('2026-09-20T00:00:00-05:00');
+const daysLeft = Math.ceil((sep20 - d)/(1000*60*60*24));
+document.getElementById('daysLeft').textContent = daysLeft;
+document.getElementById('countdownBadge').textContent = daysLeft + ' days left';
+
+// ── TAB SWITCHING ──
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── CONTACT DATA ──
+const contacts = {
+  luisa: {
+    name: 'Luisa', emoji: '🧪', role: 'Chemist — Drogam Colombia', badgeClass: 'badge-red', badgeText: 'KICKOFF NEEDED',
+    context: '8 months at Drogam and has not yet delivered a project. Valentina wants to work closely with her on white label product development for Bradley in North Carolina. Diego forwarded an email from Luisa and Bradley with their product vision and inspiration — Ruby needs to see this email.',
+    tasks: [
+      { dot: 'dot-red',    text: 'Forward the Luisa/Bradley email to Ruby for analysis' },
+      { dot: 'dot-red',    text: 'Schedule working session — what can she create? What\'s her capacity and timeline?' },
+      { dot: 'dot-yellow', text: 'Define product scope for the white label partnership with Bradley' },
+      { dot: 'dot-yellow', text: 'Ask: what formulations is she working on? What stage are they at?' },
+      { dot: 'dot-yellow', text: 'Set project milestone: when can a first formulation sample be ready?' },
+      { dot: 'dot-grey',   text: 'Read Ruby\'s white label manufacturing guide before the meeting' }
+    ],
+    nextAction: 'Message or call this week to book the working session'
+  },
+  bradley: {
+    name: 'Bradley', emoji: '🤝', role: 'White Label Partner — North Carolina', badgeClass: 'badge-yellow', badgeText: 'PIPELINE',
+    context: 'Wants to white label products manufactured by Drogam under his own brand. Has been in communication with Diego and Luisa about product concepts and inspiration. This is a separate revenue stream from Myma\'s own US consumer launch — Drogam as manufacturer, Bradley as brand.',
+    tasks: [
+      { dot: 'dot-red',    text: 'Ruby to analyze Luisa/Bradley email once Valentina forwards it' },
+      { dot: 'dot-yellow', text: 'Read white label guide — understand Drogam\'s margin position before any negotiation' },
+      { dot: 'dot-yellow', text: 'Define: what\'s the cost-plus price for white label orders from Drogam?' },
+      { dot: 'dot-yellow', text: 'Clarify: is Luisa developing new formulations or adapting existing Drogam products?' },
+      { dot: 'dot-grey',   text: 'Set up formal intro call once Luisa session has happened' }
+    ],
+    nextAction: 'On hold until Luisa session + email analysis'
+  },
+  natalia: {
+    name: 'Natalia', emoji: '📱', role: 'Social Media Manager — Colombia', badgeClass: 'badge-red', badgeText: 'URGENT THIS WEEK',
+    context: 'Social media content manager for @productosdrogam. Works with Lorena to pull product info, sales data, pharmacy partners, collaborations, and holidays for content calendar. Currently has everything planned through Aug 7. Valentina wants to meet weekly or biweekly to align on content direction.',
+    tasks: [
+      { dot: 'dot-red',    text: 'Sep 20 Día del Amor campaign brief — send THIS WEEK (49 days out). Ruby can draft it.' },
+      { dot: 'dot-red',    text: 'Set up biweekly alignment meeting cadence' },
+      { dot: 'dot-yellow', text: 'Build Aug 8 – Sep 4 content calendar together — what hooks, formats, products?' },
+      { dot: 'dot-yellow', text: 'Design "where to buy" Instagram CTA — list pharmacies in bio or story highlights' },
+      { dot: 'dot-yellow', text: 'Define what Lorena provides vs. what Valentina provides directly each cycle' },
+      { dot: 'dot-grey',   text: 'Discuss pharmacist feedback loop: can sales team observations feed into content?' }
+    ],
+    nextAction: 'Message TODAY — send Sep 20 brief + book recurring meeting'
+  },
+  julian: {
+    name: 'Julián', emoji: '📋', role: 'Drogam Colombia — Operations', badgeClass: 'badge-red', badgeText: 'BLOCKING FDA',
+    context: 'Internal Drogam Colombia staff member. Key liaison for spec sheets and product documentation. Has not yet sent spec sheets, labels, and photos to Mauricio at Fast Forward — this is the single biggest blocker on the FDA compliance track.',
+    tasks: [
+      { dot: 'dot-red',    text: 'URGENT: Send complete spec sheets + labels + photos to Mauricio (Fast Forward)' },
+      { dot: 'dot-yellow', text: 'Confirm he has INCI ingredient lists (in Spanish is fine) for all 3 hero SKUs' },
+      { dot: 'dot-yellow', text: 'Also provide: net weight/volume, shelf life, storage requirements, INVIMA registration #' },
+      { dot: 'dot-grey',   text: 'Get professional product photos (white background, multiple angles) if not done' }
+    ],
+    nextAction: 'Follow up immediately — Mauricio is waiting'
+  },
+  diego: {
+    name: 'Diego', emoji: '👨‍👧', role: 'Valentina\'s Father — Production & Supply', badgeClass: 'badge-red', badgeText: 'CALL NEEDED',
+    context: 'Valentina\'s father who started the Myma cosmetics line within Drogam. Source of all product supply for the US business. Two critical answers needed that unlock everything downstream: COGS per SKU and revenue share structure. Also the right person to ask about Luisa\'s capacity for white label work.',
+    tasks: [
+      { dot: 'dot-red',    text: 'Schedule 90-min call: COGS per SKU + revenue share structure' },
+      { dot: 'dot-red',    text: 'Get EXW Cali export price per unit for US orders (MOQ, payment terms)' },
+      { dot: 'dot-yellow', text: 'Ask: who owns the US brand trademark — Gamoneda family or new entity?' },
+      { dot: 'dot-yellow', text: 'Ask: what is Luisa\'s capacity? Can she take on white label development alongside Colombia work?' },
+      { dot: 'dot-grey',   text: 'Read Ruby\'s Questions for Diego doc before the call — 7 areas to cover' }
+    ],
+    nextAction: 'Book call this week — COGS blocks all pricing and distributor work'
+  },
+  mauricio: {
+    name: 'Mauricio', emoji: '⚖️', role: 'Fast Forward — FDA Compliance', badgeClass: 'badge-yellow', badgeText: 'WAITING ON SPECS',
+    context: 'FDA compliance consultant at Fast Forward. Pricing: facility reg $595, label review $595 first SKU then $185 each, product listing $195/SKU. Fully ready to proceed but is waiting on spec sheets from Julián. Also compare with Registrar Corp (call was planned for Wednesday 9AM).',
+    tasks: [
+      { dot: 'dot-red',    text: 'Unblock: push Julián to send spec sheets + labels to Mauricio today' },
+      { dot: 'dot-yellow', text: 'Confirm: did the Registrar Corp call happen (was scheduled Wed 9AM)?' },
+      { dot: 'dot-yellow', text: 'Once specs received: get full product classification for 3 hero SKUs' },
+      { dot: 'dot-yellow', text: 'Get full quote: facility reg + product listing + label review for 3 SKUs' },
+      { dot: 'dot-grey',   text: 'Hielo Mineral must stay off the list until he classifies it — do not mention it yet' }
+    ],
+    nextAction: 'Unblock by pushing Julián — Mauricio is ready to move'
+  },
+  dennis: {
+    name: 'Dennis', emoji: '👨', role: 'Strategy & Finance — Co-Founder', badgeClass: 'badge-blue', badgeText: 'STRATEGY',
+    context: 'Valentina\'s husband and business partner. Handles strategy, finance, and high-level decisions while working his full-time job. Equal authority on all business decisions. Primary contact for Ruby on US strategy and financial modeling.',
+    tasks: [
+      { dot: 'dot-yellow', text: 'Revenue share decision — 60/40 or 55/45 with Colombian entity? Final call needed.' },
+      { dot: 'dot-yellow', text: 'Florida LLC formation — approve the $125 SunBiz filing' },
+      { dot: 'dot-grey',   text: 'White label deal structure with Bradley — review once Luisa/email analysis is done' },
+      { dot: 'dot-grey',   text: 'E.F. Tropics outreach — approve the intro pitch when ready' }
+    ],
+    nextAction: 'Revenue share decision unlocks the LLC operating agreement'
+  }
+};
+
+// ── RENDER CONTACT LIST ──
+function renderContactList() {
+  const panel = document.getElementById('contactList');
+  Object.keys(contacts).forEach((id, i) => {
+    const c = contacts[id];
+    const card = document.createElement('div');
+    card.className = 'contact-card' + (i === 0 ? ' selected' : '');
+    card.id = 'contact-' + id;
+    card.onclick = () => selectContact(id);
+    card.innerHTML = `
+      <div class="contact-avatar">${c.emoji}</div>
+      <div>
+        <div class="contact-name-sm">${c.name}</div>
+        <div class="contact-role-sm">${c.role}</div>
+        <div class="contact-badge ${c.badgeClass}">${c.badgeText}</div>
+      </div>`;
+    panel.appendChild(card);
+  });
+  // Show first contact by default
+  selectContact(Object.keys(contacts)[0]);
+}
+
+// ── RENDER DETAIL PANEL ──
+function selectContact(id) {
+  document.querySelectorAll('.contact-card').forEach(c => c.classList.remove('selected'));
+  const el = document.getElementById('contact-' + id);
+  if (el) el.classList.add('selected');
+  const c = contacts[id];
+  const tasksHTML = c.tasks.map(t => `
+    <div class="task-item">
+      <div class="task-dot ${t.dot}"></div>
+      <div class="task-text">${t.text}</div>
+    </div>`).join('');
+
+  document.getElementById('detailPanel').innerHTML = `
+    <div class="detail-header">
+      <div class="detail-avatar">${c.emoji}</div>
+      <div>
+        <div class="detail-name">${c.name}</div>
+        <div class="detail-role">${c.role}</div>
+        <div class="contact-badge ${c.badgeClass}" style="font-size:11px;padding:3px 10px">${c.badgeText}</div>
+      </div>
+    </div>
+    <div class="detail-context">${c.context}</div>
+    <div class="detail-section-label">Running Tasks</div>
+    <div class="task-list">${tasksHTML}</div>
+    <div class="next-action">
+      <div class="next-action-label">Next Action</div>
+      <div class="next-action-text">→ ${c.nextAction}</div>
+    </div>`;
+}
+
+renderContactList();
+</script>
+</body>
+</html>
